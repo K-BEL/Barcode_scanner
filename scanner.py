@@ -32,7 +32,6 @@ def paths(V):
 paths(2)
 
 
-
 # Data model for response with quantity
 class ProductInfo(BaseModel):
     barcode: str
