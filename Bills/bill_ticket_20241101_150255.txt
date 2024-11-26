@@ -1,0 +1,16 @@
+BILL TICKET
+-------------------------
+Date: 2024-11-01 15:02:55
+-------------------------
+Product: Pencils
+Quantity: 201
+Price per Unit: 20.99 USD
+Total Price: 4218.99 USD
+-------------------------
+Product: Pringles
+Quantity: 4
+Price per Unit: 21.0 USD
+Total Price: 84.0 USD
+-------------------------
+Total: 4302.99 USD
+-------------------------

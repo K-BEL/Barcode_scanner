@@ -1,0 +1,17 @@
+BILL TICKET
+-------------------------
+Date: 2024-11-13 14:51:14
+Cashier: khalid
+-------------------------
+Product: fluffy
+Quantity: 2
+Price per Unit: 50.91 USD
+Total Price: 101.82 USD
+-------------------------
+Product: Pencils
+Quantity: 4
+Price per Unit: 20.99 USD
+Total Price: 83.96 USD
+-------------------------
+Total: 185.78 USD
+-------------------------
