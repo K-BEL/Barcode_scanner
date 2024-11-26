@@ -13,6 +13,25 @@ output_json_path = r"C:\Users\LENOVO\Desktop\Barcode_Scanner\outputs.json"
 product_details = r'C:\Users\LENOVO\Desktop\Barcode_Scanner\product_details.json'
 users_json_path = r"C:\Users\LENOVO\Desktop\Barcode_Scanner\users.json"
 
+def paths(V):
+    if V == 1:
+        # Define the file paths for input and output JSON files
+        input_json_path = r"C:\Users\LENOVO\Desktop\Barcode_Scanner\inventory_list.json"
+        output_json_path = r"C:\Users\LENOVO\Desktop\Barcode_Scanner\outputs.json"
+        product_details = r'C:\Users\LENOVO\Desktop\Barcode_Scanner\product_details.json'
+        users_json_path = r"C:\Users\LENOVO\Desktop\Barcode_Scanner\users.json"
+    if V == 2:
+        # Define the file paths for input and output JSON files
+        input_json_path = r"C:\Users\k.belhadj\Desktop\Repos\Barcode_scanner\inventory_list.json"
+        output_json_path = r"C:\Users\k.belhadj\Desktop\Repos\Barcode_scanner\outputs.json"
+        product_details = r'C:\Users\k.belhadj\Desktop\Repos\Barcode_scanner\product_details.json'
+        users_json_path = r"C:\Users\k.belhadj\Desktop\Repos\Barcode_scanner\users.json"
+    return 0
+
+#Choose paths
+paths(2)
+
+
 
 # Data model for response with quantity
 class ProductInfo(BaseModel):
