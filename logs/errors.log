@@ -1,0 +1,25 @@
+2025-11-23 23:08:30 - root - ERROR - Error creating MySQL connection pool: 1045 (28000): Access denied for user 'root'@'localhost' (using password: YES)
+2025-11-23 23:08:30 - root - ERROR - Failed to initialize MySQL connection pool: 1045 (28000): Access denied for user 'root'@'localhost' (using password: YES)
+2025-11-23 23:11:15 - root - ERROR - Database error: 1101 (42000): BLOB, TEXT, GEOMETRY or JSON column 'details' can't have a default value
+2025-11-23 23:11:15 - root - ERROR - Error creating tables: 1101 (42000): BLOB, TEXT, GEOMETRY or JSON column 'details' can't have a default value
+2025-11-23 23:11:15 - root - ERROR - Failed to initialize database: 1101 (42000): BLOB, TEXT, GEOMETRY or JSON column 'details' can't have a default value
+2025-11-23 23:13:27 - root - ERROR - Could not open camera
+2025-11-23 23:13:36 - root - ERROR - Error during barcode scanning: Unknown C++ exception from OpenCV code
+2025-11-23 23:16:56 - root - ERROR - Database error: 1050: Table 'products' already exists
+2025-11-23 23:16:56 - root - ERROR - Error creating tables: 1050: Table 'products' already exists
+2025-11-23 23:16:56 - root - ERROR - Failed to initialize database: 1050: Table 'products' already exists
+2025-11-23 23:17:20 - root - ERROR - Error during barcode scanning: Unknown C++ exception from OpenCV code
+2025-11-23 23:19:28 - root - ERROR - Error during barcode scanning: Unknown C++ exception from OpenCV code
+2025-11-23 23:19:33 - root - ERROR - Error during barcode scanning: Unknown C++ exception from OpenCV code
+2025-11-23 23:19:36 - root - ERROR - Error during barcode scanning: Unknown C++ exception from OpenCV code
+2025-11-23 23:19:38 - root - ERROR - Error during barcode scanning: Unknown C++ exception from OpenCV code
+2025-11-23 23:19:44 - root - ERROR - Error during barcode scanning: Unknown C++ exception from OpenCV code
+2025-11-23 23:36:54 - root - ERROR - Database error: 1050: Table 'products' already exists
+2025-11-23 23:36:54 - root - ERROR - Error creating tables: 1050: Table 'products' already exists
+2025-11-23 23:36:54 - root - ERROR - Failed to initialize database: 1050: Table 'products' already exists
+2025-11-24 00:03:33 - root - ERROR - Database error: 1050: Table 'products' already exists
+2025-11-24 00:03:33 - root - ERROR - Error creating tables: 1050: Table 'products' already exists
+2025-11-24 00:03:33 - root - ERROR - Failed to initialize database: 1050: Table 'products' already exists
+2025-11-24 00:04:14 - root - ERROR - Error during barcode scanning: Unknown C++ exception from OpenCV code
+2025-11-24 00:04:48 - root - ERROR - Error during barcode scanning: Unknown C++ exception from OpenCV code
+2025-11-24 00:06:05 - root - ERROR - Error during barcode scanning: Unknown C++ exception from OpenCV code

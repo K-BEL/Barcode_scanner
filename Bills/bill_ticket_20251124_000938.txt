@@ -1,0 +1,12 @@
+BILL TICKET
+-------------------------
+Date: 2025-11-24 00:09:38
+Cashier: Ahmed
+-------------------------
+Product: Notebook
+Quantity: 3
+Price per Unit: 10.99 USD
+Total Price: 32.97 USD
+-------------------------
+Total: 32.97 USD
+-------------------------
