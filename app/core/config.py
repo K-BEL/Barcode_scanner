@@ -12,9 +12,10 @@ except ImportError:
 
 try:
     from pydantic_settings import BaseSettings
+    from pydantic import Field
 except ImportError:
     # Fallback for older pydantic versions
-    from pydantic import BaseSettings
+    from pydantic import BaseSettings, Field
 
 
 class Settings(BaseSettings):
@@ -28,10 +29,11 @@ class Settings(BaseSettings):
     # Database - MySQL Configuration
     DB_HOST: str = "localhost"
     DB_PORT: int = 3306
-    DB_USER: str = "root"
-    DB_PASSWORD: str = ""
-    DB_NAME: str = "barcode_scanner"
+    DB_USER: str = Field(..., alias="DB_USERNAME")
+    DB_PASSWORD: str 
+    DB_NAME: str = Field(..., alias="DB_DATABASE")
     DB_CHARSET: str = "utf8mb4"
+    DB_CONNECTION: Optional[str] = None  # Optional, for compatibility
     
     # Database URL (constructed from above, or override with full URL)
     DATABASE_URL: Optional[str] = None
@@ -54,6 +56,7 @@ class Settings(BaseSettings):
         env_file = ".env"
         env_file_encoding = "utf-8"
         case_sensitive = True
+        populate_by_name = True  # Allow both field name and alias
     
     @property
     def project_root(self) -> Path:
