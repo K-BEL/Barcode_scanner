@@ -74,23 +74,32 @@ class BillService:
                 detail=f"Error saving bill file: {str(e)}"
             )
         
-        # Save bill to database
+        # Save bill to database and clear the cart in one transaction
+        cleared_items = 0
         with get_db() as conn:
             cursor = conn.cursor()
-            insert_query = """
-                INSERT INTO bills (bill_text, cashier_name, total_amount, file_path, created_at)
-                VALUES (%s, %s, %s, %s, %s)
-            """
-            values = (
-                bill_text,
-                cashier_name,
-                total_price,
-                str(bill_file_path),
-                datetime.utcnow()
-            )
-            cursor.execute(insert_query, values)
-            conn.commit()
-            cursor.close()
+            try:
+                insert_query = """
+                    INSERT INTO bills (bill_text, cashier_name, total_amount, file_path, created_at)
+                    VALUES (%s, %s, %s, %s, %s)
+                """
+                values = (
+                    bill_text,
+                    cashier_name,
+                    total_price,
+                    str(bill_file_path),
+                    datetime.utcnow()
+                )
+                cursor.execute(insert_query, values)
+                
+                cursor.execute("DELETE FROM cart")
+                cleared_items = cursor.rowcount
+                
+                conn.commit()
+            finally:
+                cursor.close()
+        
+        logger.info(f"Bill stored in database and cart cleared ({cleared_items} item(s))")
         
         return {
             "message": "Bill ticket generated successfully",

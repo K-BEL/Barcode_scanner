@@ -14,15 +14,20 @@ class CartService:
         """
         Add a product to cart.
         
+        If the product already exists in the cart, its quantity (and any
+        updated details) are merged instead of raising an error. This mimics
+        the behaviour of a physical caisse where scanning the same item again
+        increments its quantity.
+        
         Args:
             barcode: Product barcode
             product_data: Product data dictionary
             
         Returns:
-            Created cart item dictionary
+            Created or updated cart item dictionary
             
         Raises:
-            HTTPException: If product already in cart or not in inventory
+            HTTPException: If product not found in inventory
         """
         with get_db() as conn:
             cursor = conn.cursor(dictionary=True)
@@ -32,13 +37,53 @@ class CartService:
             cart_item = cursor.fetchone()
             
             if cart_item:
-                cursor.close()
-                raise HTTPException(
-                    status_code=400,
-                    detail="Product already in cart."
+                quantity_to_add = product_data.get('quantity')
+                if quantity_to_add is None:
+                    quantity_to_add = 1
+                
+                new_quantity = cart_item['quantity'] + quantity_to_add
+                updated_name = product_data.get('product_name') or cart_item['product_name']
+                updated_price = (
+                    product_data['price']
+                    if product_data.get('price') is not None
+                    else cart_item['price']
                 )
+                updated_details = (
+                    product_data.get('details')
+                    if product_data.get('details')
+                    else cart_item.get('details') or 'to fill'
+                )
+                
+                update_query = """
+                    UPDATE cart
+                    SET product_name = %s,
+                        price = %s,
+                        quantity = %s,
+                        details = %s,
+                        timestamp = %s
+                    WHERE barcode = %s
+                """
+                cursor.execute(
+                    update_query,
+                    (
+                        updated_name,
+                        updated_price,
+                        new_quantity,
+                        updated_details,
+                        datetime.utcnow(),
+                        barcode
+                    )
+                )
+                conn.commit()
+                
+                cursor.execute("SELECT * FROM cart WHERE barcode = %s", (barcode,))
+                updated_cart_item = cursor.fetchone()
+                cursor.close()
+                
+                logger.info(f"Cart quantity updated: {barcode} -> {new_quantity}")
+                return updated_cart_item
             
-            # Verify product exists in inventory
+            # Verify product exists in inventory for new cart entries
             cursor.execute("SELECT * FROM products WHERE barcode = %s", (barcode,))
             product = cursor.fetchone()
             if not product:
@@ -48,18 +93,20 @@ class CartService:
                     detail="Product not found in inventory."
                 )
             
-            # Insert cart item
             insert_query = """
                 INSERT INTO cart (barcode, product_name, price, quantity, details, timestamp)
                 VALUES (%s, %s, %s, %s, %s, %s)
             """
             details = product_data.get('details') or product.get('details') or 'to fill'
+            quantity = product_data.get('quantity')
+            if quantity is None:
+                quantity = 1
             
             values = (
                 barcode,
                 product_data.get('product_name', product['product_name']),
                 product_data.get('price', product['price']),
-                product_data.get('quantity', 1),
+                quantity,
                 details,
                 datetime.utcnow()
             )

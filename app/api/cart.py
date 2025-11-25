@@ -1,6 +1,5 @@
 """Cart management API routes."""
-from typing import Dict
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 
 from app.schemas.cart import CartItemCreate, CartItemUpdate, CartItemResponse, CartResponse
 from app.services.cart_service import CartService
@@ -102,9 +101,6 @@ def get_list_cart():
     """
     service = CartService()
     cart_items = service.get_all_cart_items()
-    
-    if not cart_items:
-        raise HTTPException(status_code=404, detail="Cart is empty.")
     
     products_dict = {}
     for item in cart_items:

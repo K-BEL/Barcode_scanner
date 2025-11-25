@@ -1,8 +1,8 @@
 """User management API routes."""
 from typing import Dict
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Query
 
-from app.schemas.user import UserCreate, UserUpdate, UserResponse
+from app.schemas.user import UserCreate, UserResponse
 from app.services.user_service import UserService
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -102,9 +102,6 @@ def get_users():
     """
     service = UserService()
     users = service.get_all_users()
-    
-    if not users:
-        raise HTTPException(status_code=404, detail="No users found.")
     
     result = {}
     for user in users:

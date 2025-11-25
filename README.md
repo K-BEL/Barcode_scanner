@@ -107,12 +107,13 @@ Quick barcode scanning to view product information.
 ### Cart Management
 - **View Cart**: See all cart items with totals
 - **Add Product**: Scan or add products to cart
+- **Smart Quantity Updates**: Scanning/adding the same barcode again automatically increases its quantity
 - **Modify Product**: Update cart items
 - **Delete Product**: Remove items from cart
 - **Clear Cart**: Remove all items
 
 ### Generate Bill
-Generate bills from cart items. Bills are saved to `Bills/` directory.
+Generate bills from cart items. Bills are saved to `Bills/` directory and the cart is automatically cleared to prepare for the next customer.
 
 ### User Management
 Manage system users (add, modify, delete, view).
