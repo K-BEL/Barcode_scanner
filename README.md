@@ -1,17 +1,49 @@
 # Barcode Scanner System
 
-A modern, scalable barcode scanning and inventory management system built with FastAPI and Streamlit.
+A modern, scalable barcode scanning and inventory management system with:
+- **FastAPI Backend** - RESTful API with MySQL database
+- **Flutter Mobile App** - Android app with camera barcode scanning
+- **Streamlit Web Frontend** - Optional web-based testing interface
 
 ## Features
 
-- 📷 **Barcode Scanning**: Real-time barcode scanning using camera
+- 📷 **Barcode Scanning**: Real-time barcode scanning using phone camera (Flutter) or computer camera (Streamlit)
 - 📦 **Inventory Management**: Complete CRUD operations for products
 - 🛒 **Shopping Cart**: Manage cart items before checkout
 - 🧾 **Bill Generation**: Generate and save bill tickets
 - 👥 **User Management**: Manage system users
 - 🗄️ **MySQL Database**: Pure MySQL implementation (no ORM)
 - 📊 **Dashboard**: Real-time statistics and quick actions
-- 🎨 **Modern UI**: Beautiful, intuitive Streamlit interface
+- 🎨 **Modern UI**: Beautiful interfaces for both mobile and web
+
+## Project Structure
+
+```
+Barcode_scanner/
+├── backend/                    # FastAPI backend
+│   ├── app/
+│   │   ├── api/               # API routes
+│   │   ├── services/          # Business logic
+│   │   ├── core/              # Configuration & database
+│   │   ├── frontend/          # Streamlit UI (optional)
+│   │   ├── schemas/           # Pydantic models
+│   │   └── utils/             # Utilities
+│   ├── run_api.py             # API server script
+│   ├── run_frontend.py        # Streamlit frontend script
+│   └── requirements.txt       # Backend dependencies
+│
+├── frontend/                   # Flutter mobile app
+│   ├── lib/
+│   │   ├── models/            # Data models
+│   │   ├── services/          # API service layer
+│   │   └── screens/           # UI screens
+│   ├── android/               # Android configuration
+│   └── pubspec.yaml           # Flutter dependencies
+│
+├── Bills/                      # Generated bills
+├── logs/                       # Application logs
+└── README.md                   # This file
+```
 
 ## Quick Start
 
@@ -19,16 +51,17 @@ A modern, scalable barcode scanning and inventory management system built with F
 
 - Python 3.8+
 - MySQL Server
-- Camera (for barcode scanning)
+- Flutter SDK 3.0+ (for mobile app)
+- Android Studio / Android SDK (for mobile app)
 
-### Installation
+### Backend Setup
 
-1. **Clone and navigate to project**
+1. **Navigate to backend directory**
 ```bash
-cd Barcode_scanner
+cd backend
 ```
 
-2. **Install dependencies**
+2. **Install Python dependencies**
 ```bash
 pip install -r requirements.txt
 ```
@@ -45,7 +78,7 @@ FLUSH PRIVILEGES;
 
 4. **Configure environment**
 
-Create `.env` file:
+Create `backend/.env` file:
 ```env
 DB_HOST=localhost
 DB_PORT=3306
@@ -56,81 +89,50 @@ DB_CHARSET=utf8mb4
 FRONTEND_BASE_URL=http://127.0.0.1:8000
 ```
 
-### Running the Application
-
-**Terminal 1 - Start API Server:**
+5. **Run the API server**
 ```bash
 python run_api.py
 ```
 
-**Terminal 2 - Start Frontend:**
+The API will be available at http://127.0.0.1:8000
+API documentation: http://127.0.0.1:8000/docs
+
+### Optional: Streamlit Web Frontend
+
+From the `backend` directory:
 ```bash
 python run_frontend.py
 ```
 
-- **API**: http://127.0.0.1:8000
-- **Frontend**: http://localhost:8501
-- **API Docs**: http://127.0.0.1:8000/docs
+The Streamlit interface will be available at http://localhost:8501
 
-## Project Structure
+### Flutter Mobile App Setup
 
-```
-Barcode_scanner/
-├── app/
-│   ├── api/          # API routes
-│   ├── services/     # Business logic
-│   ├── core/         # Configuration & database
-│   ├── frontend/     # Streamlit UI
-│   ├── schemas/      # Pydantic models
-│   └── utils/        # Utilities
-├── Bills/            # Generated bills
-├── logs/             # Application logs
-├── run_api.py        # API server script
-├── run_frontend.py   # Frontend script
-└── requirements.txt  # Dependencies
+See [frontend/README.md](frontend/README.md) for detailed Flutter app setup instructions.
+
+Quick setup:
+```bash
+cd frontend
+flutter pub get
+flutter run
 ```
 
-## Usage
-
-### Dashboard
-View statistics, quick actions, and current cart items.
-
-### Scan Barcode
-Quick barcode scanning to view product information.
-
-### Inventory Management
-- **View All**: Browse all products in inventory
-- **Add Product**: Scan or manually add products
-- **Modify Product**: Update product details
-- **Delete Product**: Remove products from inventory
-
-### Cart Management
-- **View Cart**: See all cart items with totals
-- **Add Product**: Scan or add products to cart
-- **Modify Product**: Update cart items
-- **Delete Product**: Remove items from cart
-- **Clear Cart**: Remove all items
-
-### Generate Bill
-Generate bills from cart items. Bills are saved to `Bills/` directory.
-
-### User Management
-Manage system users (add, modify, delete, view).
+**Note for physical device testing**: Update `lib/services/api_service.dart` with your computer's IP address instead of `10.0.2.2`.
 
 ## API Endpoints
 
 ### Scanner
-- `GET /scan/barcode` - Scan a barcode
+- `GET /scan/barcode` - Scan a barcode (uses backend camera)
 
 ### Inventory
 - `GET /inventory/products` - Get all products
-- `POST /inventory/products` - Add product
+- `POST /inventory/products?barcode={barcode}` - Add product
 - `PUT /inventory/products/{barcode}` - Update product
 - `DELETE /inventory/products/{barcode}` - Delete product
 
 ### Cart
 - `GET /cart/products` - Get cart items
-- `POST /cart/products` - Add to cart
+- `POST /cart/products?barcode={barcode}` - Add to cart
 - `PUT /cart/products/{barcode}` - Update cart item
 - `DELETE /cart/products/{barcode}` - Remove from cart
 - `DELETE /cart/clear` - Clear cart
@@ -138,11 +140,11 @@ Manage system users (add, modify, delete, view).
 ### Users
 - `GET /users` - Get all users
 - `POST /users` - Add user
-- `PUT /users/{user_id}` - Update user
+- `PUT /users/{user_id}?name={name}` - Update user
 - `DELETE /users/{user_id}` - Delete user
 
 ### Bills
-- `GET /bills/generate` - Generate bill
+- `GET /bills/generate?cashier_name={name}` - Generate bill
 
 ## Database
 
@@ -155,44 +157,49 @@ The application uses **pure MySQL** (no ORM). Tables are automatically created o
 
 ## Configuration
 
-All configuration is done via `.env` file or environment variables:
+All backend configuration is done via `.env` file in the `backend/` directory:
 
 - `DB_HOST` - MySQL host (default: localhost)
 - `DB_PORT` - MySQL port (default: 3306)
 - `DB_USER` - MySQL username
 - `DB_PASSWORD` - MySQL password
 - `DB_NAME` - Database name (default: barcode_scanner)
-- `FRONTEND_BASE_URL` - API base URL for frontend
+- `API_HOST` - API server host (default: 127.0.0.1)
+- `API_PORT` - API server port (default: 8000)
 
 ## Troubleshooting
 
 ### API Connection Issues
-- Ensure API server is running: `python run_api.py`
-- Check `FRONTEND_BASE_URL` in `.env`
+- Ensure API server is running: `cd backend && python run_api.py`
+- Check `.env` file configuration
 - Verify firewall settings
+- For mobile app: Use computer's local IP instead of localhost (see Flutter README)
 
 ### Database Issues
 - Check MySQL service is running
-- Verify credentials in `.env`
+- Verify credentials in `backend/.env`
 - Ensure database exists
 
-### Camera Issues
+### Camera Issues (Streamlit)
 - Grant camera permissions to browser
 - Check if camera is in use by another app
 - Try different camera index in config
 
 ## Development
 
-### Project Structure
-- **API Layer** (`app/api/`): HTTP endpoints
-- **Service Layer** (`app/services/`): Business logic with MySQL queries
-- **Core** (`app/core/`): Configuration and database connection
-- **Frontend** (`app/frontend/`): Streamlit UI
+### Backend Development
+- **API Layer** (`backend/app/api/`): HTTP endpoints
+- **Service Layer** (`backend/app/services/`): Business logic with MySQL queries
+- **Core** (`backend/app/core/`): Configuration and database connection
+- **Frontend** (`backend/app/frontend/`): Streamlit UI
+
+### Mobile App Development
+See [frontend/README.md](frontend/README.md) for Flutter app development guide.
 
 ### Adding Features
-1. Add service method in `app/services/`
-2. Create API route in `app/api/`
-3. Update frontend in `app/frontend/main.py`
+1. Add service method in `backend/app/services/`
+2. Create API route in `backend/app/api/`
+3. Update Flutter app in `frontend/lib/` or Streamlit frontend in `backend/app/frontend/`
 
 ## License
 
@@ -200,7 +207,7 @@ All configuration is done via `.env` file or environment variables:
 
 ## Support
 
-For issues or questions, check:
+For issues or questions:
 - API logs: `logs/app.log` and `logs/errors.log`
 - API documentation: http://127.0.0.1:8000/docs
-- Database connection status in frontend sidebar
+- Check backend and frontend README files for specific setup issues
