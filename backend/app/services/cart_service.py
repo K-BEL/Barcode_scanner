@@ -33,15 +33,11 @@ class CartService:
         with get_db() as conn:
             cursor = conn.cursor(dictionary=True)
             
-            # Check if already in cart
-            cursor.execute("SELECT * FROM cart WHERE barcode = %s", (barcode,))
+            # Use SELECT FOR UPDATE to lock the row and prevent race conditions
+            cursor.execute("SELECT * FROM cart WHERE barcode = %s FOR UPDATE", (barcode,))
             cart_item = cursor.fetchone()
             
             if cart_item:
-<<<<<<< HEAD:backend/app/services/cart_service.py
-                cursor.close()
-                raise CartItemAlreadyExistsError(f"Product with barcode {barcode} already in cart.")
-=======
                 quantity_to_add = product_data.get('quantity')
                 if quantity_to_add is None:
                     quantity_to_add = 1
@@ -87,7 +83,6 @@ class CartService:
                 
                 logger.info(f"Cart quantity updated: {barcode} -> {new_quantity}")
                 return updated_cart_item
->>>>>>> 6ee6f1d48ec387ee4f167c258872756aab4d6efe:app/services/cart_service.py
             
             # Verify product exists in inventory for new cart entries
             cursor.execute("SELECT * FROM products WHERE barcode = %s", (barcode,))

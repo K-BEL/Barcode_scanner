@@ -53,8 +53,8 @@ class Settings(BaseSettings):
     # Frontend
     FRONTEND_BASE_URL: str = "http://127.0.0.1:8000"
     ALLOWED_ORIGINS: str = Field(
-        default="*",
-        description="Comma-separated list of allowed CORS origins. Use '*' for all (development only)"
+        default="",
+        description="Comma-separated list of allowed CORS origins. Leave empty for development (allows all). In production, specify exact origins."
     )
     
     class Config:
@@ -77,10 +77,23 @@ class Settings(BaseSettings):
     
     @property
     def cors_origins(self) -> List[str]:
-        """Get list of allowed CORS origins."""
-        if self.ALLOWED_ORIGINS == "*":
+        """
+        Get list of allowed CORS origins.
+        
+        Security: In production (DEBUG=False), wildcard is not allowed.
+        In development (DEBUG=True), if ALLOWED_ORIGINS is empty or "*", allows all origins.
+        """
+        # In production, never allow wildcard
+        if not self.DEBUG:
+            if not self.ALLOWED_ORIGINS or self.ALLOWED_ORIGINS == "*":
+                # In production, default to frontend URL if not specified
+                return [self.FRONTEND_BASE_URL]
+            return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",") if origin.strip()]
+        
+        # In development, allow wildcard if explicitly set or if empty
+        if not self.ALLOWED_ORIGINS or self.ALLOWED_ORIGINS == "*":
             return ["*"]
-        return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",")]
+        return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",") if origin.strip()]
 
 
 # Global settings instance

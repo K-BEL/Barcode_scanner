@@ -29,13 +29,22 @@ app = FastAPI(
 app.add_middleware(ExceptionHandlerMiddleware)
 
 # Configure CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.cors_origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Security: In production, restrict methods and headers
+cors_kwargs = {
+    "allow_origins": settings.cors_origins,
+    "allow_credentials": True,
+}
+
+if settings.DEBUG:
+    # Development: Allow all methods and headers
+    cors_kwargs["allow_methods"] = ["*"]
+    cors_kwargs["allow_headers"] = ["*"]
+else:
+    # Production: Restrict to necessary methods and headers
+    cors_kwargs["allow_methods"] = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    cors_kwargs["allow_headers"] = ["Content-Type", "Authorization", "Accept"]
+
+app.add_middleware(CORSMiddleware, **cors_kwargs)
 
 # Include routers with API versioning
 app.include_router(scanner.router, prefix=API_V1_PREFIX)

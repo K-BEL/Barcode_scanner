@@ -107,7 +107,8 @@ class InventoryService:
         with get_db() as conn:
             cursor = conn.cursor(dictionary=True)
             
-            # Build WHERE clause
+            # Build WHERE clause using parameterized queries
+            # All clause strings are hardcoded to prevent SQL injection
             where_clauses = []
             params = []
             
@@ -123,17 +124,22 @@ class InventoryService:
                 where_clauses.append("price <= %s")
                 params.append(max_price)
             
-            where_clause = " AND ".join(where_clauses) if where_clauses else ""
-            query = f"SELECT * FROM products"
-            if where_clause:
-                query += f" WHERE {where_clause}"
-            query += " ORDER BY timestamp DESC"
+            # Build query with parameterized WHERE clause
+            # WHERE clause parts are hardcoded strings, only values are parameterized
+            query_parts = ["SELECT * FROM products"]
             
-            # Add pagination
+            if where_clauses:
+                query_parts.append("WHERE")
+                query_parts.append(" AND ".join(where_clauses))
+            
+            query_parts.append("ORDER BY timestamp DESC")
+            
+            # Validate pagination parameters are integers (already validated in API layer)
             offset = (page - 1) * page_size
-            query += f" LIMIT %s OFFSET %s"
+            query_parts.append("LIMIT %s OFFSET %s")
             params.extend([page_size, offset])
             
+            query = " ".join(query_parts)
             cursor.execute(query, params)
             products = cursor.fetchall()
             cursor.close()

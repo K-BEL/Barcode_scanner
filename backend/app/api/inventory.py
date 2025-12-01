@@ -1,16 +1,12 @@
 """Inventory management API routes."""
-<<<<<<< HEAD:backend/app/api/inventory.py
 from typing import Dict, Optional
 from fastapi import APIRouter, HTTPException, Depends, Query
-=======
-from typing import Dict
-from fastapi import APIRouter
->>>>>>> 6ee6f1d48ec387ee4f167c258872756aab4d6efe:app/api/inventory.py
 
 from app.schemas.product import ProductCreate, ProductUpdate, ProductResponse
 from app.services.inventory_service import InventoryService
 from app.core.dependencies import get_inventory_service
 from app.utils.datetime_utils import serialize_datetime
+from app.utils.validators import validate_barcode
 
 router = APIRouter(prefix="/inventory", tags=["inventory"])
 
@@ -32,6 +28,12 @@ def add_product(
     Returns:
         Created product information
     """
+    # Validate barcode format
+    try:
+        barcode = validate_barcode(barcode)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
     created_product = service.add_product(barcode, product.dict())
     
     return ProductResponse(
@@ -61,6 +63,12 @@ def modify_product(
     Returns:
         Updated product information
     """
+    # Validate barcode format
+    try:
+        barcode = validate_barcode(barcode)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
     updated_product = service.update_product(
         barcode,
         {k: v for k, v in product.dict().items() if v is not None}
@@ -91,6 +99,12 @@ def delete_product(
     Returns:
         Success message
     """
+    # Validate barcode format
+    try:
+        barcode = validate_barcode(barcode)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
     deleted_product = service.delete_product(barcode)
     
     return {

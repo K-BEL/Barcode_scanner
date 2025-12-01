@@ -117,9 +117,8 @@ flutter pub get
 flutter run
 ```
 
-<<<<<<< HEAD
 **Note for physical device testing**: Update `lib/services/api_service.dart` with your computer's IP address instead of `10.0.2.2`.
-=======
+
 ## Usage
 
 ### Dashboard
@@ -147,7 +146,6 @@ Generate bills from cart items. Bills are saved to `Bills/` directory and the ca
 
 ### User Management
 Manage system users (add, modify, delete, view).
->>>>>>> 6ee6f1d48ec387ee4f167c258872756aab4d6efe
 
 ## API Endpoints
 
@@ -187,33 +185,182 @@ The application uses **pure MySQL** (no ORM). Tables are automatically created o
 
 ## Configuration
 
-All backend configuration is done via `.env` file in the `backend/` directory:
+All backend configuration is done via `.env` file in the `backend/` directory.
+
+### Required Environment Variables
 
 - `DB_HOST` - MySQL host (default: localhost)
 - `DB_PORT` - MySQL port (default: 3306)
-- `DB_USER` - MySQL username
-- `DB_PASSWORD` - MySQL password
-- `DB_NAME` - Database name (default: barcode_scanner)
+- `DB_USERNAME` or `DB_USER` - MySQL username (required)
+- `DB_PASSWORD` - MySQL password (required)
+- `DB_DATABASE` or `DB_NAME` - Database name (required)
+- `DB_CHARSET` - Database charset (default: utf8mb4)
+- `DB_POOL_SIZE` - Connection pool size (default: 10)
+
+### Optional Environment Variables
+
 - `API_HOST` - API server host (default: 127.0.0.1)
 - `API_PORT` - API server port (default: 8000)
+- `DEBUG` - Enable debug mode (default: False)
+- `ALLOWED_ORIGINS` - CORS allowed origins (comma-separated, empty for development)
+- `FRONTEND_BASE_URL` - Frontend base URL (default: http://127.0.0.1:8000)
+
+### Creating .env File
+
+1. Copy the example file (if available) or create a new `.env` file in the `backend/` directory
+2. Set all required variables with your actual values
+3. Never commit the `.env` file to version control
+
+Example `.env` file:
+```env
+DB_HOST=localhost
+DB_PORT=3306
+DB_USERNAME=barcode_user
+DB_PASSWORD=your_secure_password
+DB_DATABASE=barcode_scanner
+DEBUG=False
+ALLOWED_ORIGINS=http://localhost:3000,https://yourdomain.com
+```
+
+## Deployment
+
+### Production Deployment Considerations
+
+1. **Security**
+   - Set `DEBUG=False` in production
+   - Configure `ALLOWED_ORIGINS` with specific domains (never use `*` in production)
+   - Use strong database passwords
+   - Enable HTTPS/SSL for API endpoints
+   - Consider implementing API authentication (currently not implemented)
+
+2. **Database**
+   - Use a production-grade MySQL server
+   - Set up proper backups
+   - Configure connection pooling appropriately
+   - Monitor database performance
+
+3. **Docker Deployment**
+   - Use `docker-compose.yml` for containerized deployment
+   - Set environment variables via `.env` file or Docker secrets
+   - Configure health checks
+   - Set up log rotation
+
+4. **Environment Variables**
+   - Never commit `.env` files to version control
+   - Use secrets management in production (e.g., Docker secrets, Kubernetes secrets)
+   - Rotate credentials regularly
+
+### Docker Deployment
+
+```bash
+# Build and start services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f api
+
+# Stop services
+docker-compose down
+```
+
+## API Authentication
+
+**Note:** Currently, the API does not implement authentication. All endpoints are publicly accessible. For production use, consider implementing:
+
+- JWT-based authentication
+- API key authentication
+- OAuth2 integration
+- Role-based access control (RBAC)
+
+This is a planned feature for future versions.
 
 ## Troubleshooting
 
 ### API Connection Issues
+
+**Problem:** Cannot connect to API server
+
+**Solutions:**
 - Ensure API server is running: `cd backend && python run_api.py`
 - Check `.env` file configuration
-- Verify firewall settings
+- Verify firewall settings allow connections on the API port
+- Check if port 8000 is already in use: `netstat -an | grep 8000` (Linux/Mac) or `netstat -an | findstr 8000` (Windows)
 - For mobile app: Use computer's local IP instead of localhost (see Flutter README)
+- Check API logs in `logs/app.log` and `logs/errors.log`
 
 ### Database Issues
-- Check MySQL service is running
-- Verify credentials in `backend/.env`
-- Ensure database exists
+
+**Problem:** Database connection errors
+
+**Solutions:**
+- Check MySQL service is running: `sudo systemctl status mysql` (Linux) or check Services (Windows)
+- Verify credentials in `backend/.env` match your MySQL setup
+- Ensure database exists: `mysql -u root -p -e "SHOW DATABASES;"`
+- Check database user has proper permissions
+- Verify network connectivity to database server
+- Check database connection pool settings if experiencing connection exhaustion
+
+**Problem:** "Table doesn't exist" errors
+
+**Solutions:**
+- Database tables are auto-created on first run
+- Check `backend/app/core/db_init.py` for table creation scripts
+- Manually run database initialization if needed
+- Check database logs for creation errors
+
+### Flutter App Issues
+
+**Problem:** App cannot connect to API
+
+**Solutions:**
+- Update `lib/services/api_service.dart` with correct base URL
+- For emulator: Use `http://10.0.2.2:8000`
+- For physical device: Use your computer's local IP (e.g., `http://192.168.1.100:8000`)
+- Ensure API server is accessible from the device's network
+- Check firewall allows incoming connections
+- Verify API server is bound to `0.0.0.0` not just `127.0.0.1`
+
+**Problem:** Barcode scanning not working
+
+**Solutions:**
+- Grant camera permissions to the app
+- Check device camera is not in use by another app
+- Verify `mobile_scanner` package is properly installed
+- Check AndroidManifest.xml has camera permissions
 
 ### Camera Issues (Streamlit)
+
+**Problem:** Camera not detected or not working
+
+**Solutions:**
 - Grant camera permissions to browser
 - Check if camera is in use by another app
 - Try different camera index in config
+- On Linux, may need to install `v4l-utils`
+- Check browser console for errors
+
+### Validation Errors
+
+**Problem:** API returns 400 Bad Request or 422 Unprocessable Entity
+
+**Solutions:**
+- Check request body matches schema requirements
+- Verify barcode format (alphanumeric, max 255 chars)
+- Ensure prices are non-negative and within valid range
+- Check quantities are non-negative integers
+- Verify string lengths are within limits (product names max 255 chars)
+
+### Performance Issues
+
+**Problem:** Slow API responses
+
+**Solutions:**
+- Check database query performance
+- Monitor connection pool usage
+- Consider adding database indexes
+- Review and optimize slow queries
+- Check server resource usage (CPU, memory)
+- Consider implementing caching for frequently accessed data
 
 ## Development
 

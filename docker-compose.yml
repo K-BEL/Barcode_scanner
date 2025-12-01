@@ -5,10 +5,10 @@ services:
     image: mysql:8.0
     container_name: barcode_scanner_db
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: barcode_scanner
-      MYSQL_USER: barcode_user
-      MYSQL_PASSWORD: barcode_password
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-barcode_scanner}
+      MYSQL_USER: ${MYSQL_USER:-barcode_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-barcode_password}
     ports:
       - "3306:3306"
     volumes:
@@ -27,17 +27,17 @@ services:
       dockerfile: Dockerfile
     container_name: barcode_scanner_api
     environment:
-      DB_HOST: db
-      DB_PORT: 3306
-      DB_USERNAME: barcode_user
-      DB_PASSWORD: barcode_password
-      DB_DATABASE: barcode_scanner
-      DB_CHARSET: utf8mb4
-      DB_POOL_SIZE: 10
-      API_HOST: 0.0.0.0
-      API_PORT: 8000
-      ALLOWED_ORIGINS: "*"
-      DEBUG: "False"
+      DB_HOST: ${DB_HOST:-db}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_USERNAME: ${MYSQL_USER:-barcode_user}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-barcode_password}
+      DB_DATABASE: ${MYSQL_DATABASE:-barcode_scanner}
+      DB_CHARSET: ${DB_CHARSET:-utf8mb4}
+      DB_POOL_SIZE: ${DB_POOL_SIZE:-10}
+      API_HOST: ${API_HOST:-0.0.0.0}
+      API_PORT: ${API_PORT:-8000}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-}
+      DEBUG: ${DEBUG:-False}
     ports:
       - "8000:8000"
     volumes:

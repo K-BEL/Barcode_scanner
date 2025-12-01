@@ -1,16 +1,12 @@
 """User management API routes."""
-<<<<<<< HEAD:backend/app/api/users.py
 from typing import Dict, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
-=======
-from typing import Dict
-from fastapi import APIRouter, Query
->>>>>>> 6ee6f1d48ec387ee4f167c258872756aab4d6efe:app/api/users.py
 
 from app.schemas.user import UserCreate, UserResponse
 from app.services.user_service import UserService
 from app.core.dependencies import get_user_service
 from app.utils.datetime_utils import serialize_datetime_optional
+from app.utils.validators import validate_user_id
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -43,7 +39,7 @@ def add_user(
 @router.put("/{user_id}", response_model=UserResponse)
 def modify_user(
     user_id: str,
-    name: str = Query(..., description="New user name"),
+    name: str = Query(..., description="New user name", min_length=1, max_length=255),
     service: UserService = Depends(get_user_service)
 ):
     """
@@ -57,6 +53,17 @@ def modify_user(
     Returns:
         Updated user information
     """
+    # Validate user ID format
+    try:
+        user_id = validate_user_id(user_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
+    # Validate name
+    if not name or not name.strip():
+        raise HTTPException(status_code=400, detail="User name cannot be empty or whitespace only")
+    name = name.strip()
+    
     updated_user = service.update_user(user_id, name)
     
     return UserResponse(
@@ -82,6 +89,12 @@ def delete_user(
     Returns:
         Success message
     """
+    # Validate user ID format
+    try:
+        user_id = validate_user_id(user_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
     deleted_user = service.delete_user(user_id)
     
     return {

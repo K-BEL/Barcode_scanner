@@ -1,15 +1,12 @@
 """Cart management API routes."""
-<<<<<<< HEAD:backend/app/api/cart.py
 from typing import Dict
 from fastapi import APIRouter, HTTPException, Depends
-=======
-from fastapi import APIRouter
->>>>>>> 6ee6f1d48ec387ee4f167c258872756aab4d6efe:app/api/cart.py
 
 from app.schemas.cart import CartItemCreate, CartItemUpdate, CartItemResponse, CartResponse
 from app.services.cart_service import CartService
 from app.core.dependencies import get_cart_service
 from app.utils.datetime_utils import serialize_datetime
+from app.utils.validators import validate_barcode
 
 router = APIRouter(prefix="/cart", tags=["cart"])
 
@@ -31,6 +28,12 @@ def add_product_cart(
     Returns:
         Created cart item information
     """
+    # Validate barcode format
+    try:
+        barcode = validate_barcode(barcode)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
     cart_item = service.add_product(barcode, product.dict())
     
     return CartItemResponse(
@@ -60,6 +63,12 @@ def modify_product_cart(
     Returns:
         Updated cart item information
     """
+    # Validate barcode format
+    try:
+        barcode = validate_barcode(barcode)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
     cart_item = service.update_cart_item(
         barcode,
         {k: v for k, v in product.dict().items() if v is not None}
@@ -90,6 +99,12 @@ def delete_product_cart(
     Returns:
         Success message
     """
+    # Validate barcode format
+    try:
+        barcode = validate_barcode(barcode)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
     deleted_item = service.delete_cart_item(barcode)
     
     return {
