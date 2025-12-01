@@ -1,0 +1,17 @@
+BILL TICKET
+-------------------------
+Date: 2025-11-25 01:17:08
+Cashier: Ahmed
+-------------------------
+Product: Pringles
+Quantity: 3
+Price per Unit: 10.99 USD
+Total Price: 32.97 USD
+-------------------------
+Product: Notebook
+Quantity: 2
+Price per Unit: 10.99 USD
+Total Price: 21.98 USD
+-------------------------
+Total: 54.95 USD
+-------------------------

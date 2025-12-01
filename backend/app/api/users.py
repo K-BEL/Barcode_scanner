@@ -1,8 +1,13 @@
 """User management API routes."""
+<<<<<<< HEAD:backend/app/api/users.py
 from typing import Dict, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
+=======
+from typing import Dict
+from fastapi import APIRouter, Query
+>>>>>>> 6ee6f1d48ec387ee4f167c258872756aab4d6efe:app/api/users.py
 
-from app.schemas.user import UserCreate, UserUpdate, UserResponse
+from app.schemas.user import UserCreate, UserResponse
 from app.services.user_service import UserService
 from app.core.dependencies import get_user_service
 from app.utils.datetime_utils import serialize_datetime_optional
@@ -106,9 +111,6 @@ def get_users(
         Dictionary of users
     """
     users = service.get_all_users(page=page, page_size=page_size)
-    
-    if not users:
-        raise HTTPException(status_code=404, detail="No users found.")
     
     result = {}
     for user in users:

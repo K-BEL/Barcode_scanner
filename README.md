@@ -117,7 +117,37 @@ flutter pub get
 flutter run
 ```
 
+<<<<<<< HEAD
 **Note for physical device testing**: Update `lib/services/api_service.dart` with your computer's IP address instead of `10.0.2.2`.
+=======
+## Usage
+
+### Dashboard
+View statistics, quick actions, and current cart items.
+
+### Scan Barcode
+Quick barcode scanning to view product information.
+
+### Inventory Management
+- **View All**: Browse all products in inventory
+- **Add Product**: Scan or manually add products
+- **Modify Product**: Update product details
+- **Delete Product**: Remove products from inventory
+
+### Cart Management
+- **View Cart**: See all cart items with totals
+- **Add Product**: Scan or add products to cart
+- **Smart Quantity Updates**: Scanning/adding the same barcode again automatically increases its quantity
+- **Modify Product**: Update cart items
+- **Delete Product**: Remove items from cart
+- **Clear Cart**: Remove all items
+
+### Generate Bill
+Generate bills from cart items. Bills are saved to `Bills/` directory and the cart is automatically cleared to prepare for the next customer.
+
+### User Management
+Manage system users (add, modify, delete, view).
+>>>>>>> 6ee6f1d48ec387ee4f167c258872756aab4d6efe
 
 ## API Endpoints
 

@@ -1,6 +1,11 @@
 """Inventory management API routes."""
+<<<<<<< HEAD:backend/app/api/inventory.py
 from typing import Dict, Optional
 from fastapi import APIRouter, HTTPException, Depends, Query
+=======
+from typing import Dict
+from fastapi import APIRouter
+>>>>>>> 6ee6f1d48ec387ee4f167c258872756aab4d6efe:app/api/inventory.py
 
 from app.schemas.product import ProductCreate, ProductUpdate, ProductResponse
 from app.services.inventory_service import InventoryService
@@ -127,9 +132,6 @@ def get_list_inventory(
         page=page,
         page_size=page_size
     )
-    
-    if not products:
-        raise HTTPException(status_code=404, detail="No products found in inventory.")
     
     result = {}
     for product in products:
