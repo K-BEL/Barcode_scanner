@@ -31,7 +31,16 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
+  flutter_launcher_icons: ^0.14.4
 
 flutter:
   uses-material-design: true
+
+# flutter_launcher_icons:
+#   android: true
+#   ios: false
+#   # To generate icons, uncomment above and add a 1024x1024 PNG file at assets/icon/icon.png
+#   # Then run: dart run flutter_launcher_icons
+#   image_path: "assets/icon/icon.png"
+#   adaptive_icon_background: "#2196F3"
 
