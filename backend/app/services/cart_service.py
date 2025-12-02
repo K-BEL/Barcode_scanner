@@ -42,6 +42,21 @@ class CartService:
                 if quantity_to_add is None:
                     quantity_to_add = 1
                 
+                # Check inventory availability for existing cart items
+                cursor.execute("SELECT * FROM products WHERE barcode = %s", (barcode,))
+                product = cursor.fetchone()
+                if not product:
+                    cursor.close()
+                    raise ProductNotFoundError(f"Product with barcode {barcode} not found in inventory.")
+                
+                # Check if adding this quantity would exceed available inventory
+                if product['quantity'] < (cart_item['quantity'] + quantity_to_add):
+                    cursor.close()
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Insufficient inventory. Available: {product['quantity']}, Requested: {cart_item['quantity'] + quantity_to_add}"
+                    )
+                
                 new_quantity = cart_item['quantity'] + quantity_to_add
                 updated_name = product_data.get('product_name') or cart_item['product_name']
                 updated_price = (
@@ -90,6 +105,18 @@ class CartService:
             if not product:
                 cursor.close()
                 raise ProductNotFoundError(f"Product with barcode {barcode} not found in inventory.")
+            
+            # Check inventory availability (for new cart entries)
+            quantity_to_add = product_data.get('quantity')
+            if quantity_to_add is None:
+                quantity_to_add = 1
+            
+            if product['quantity'] < quantity_to_add:
+                cursor.close()
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Insufficient inventory. Available: {product['quantity']}, Requested: {quantity_to_add}"
+                )
             
             insert_query = """
                 INSERT INTO cart (barcode, product_name, price, quantity, details, timestamp)

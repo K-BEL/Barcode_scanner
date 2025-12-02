@@ -67,3 +67,55 @@ def validate_user_id(user_id: str) -> str:
     
     return user_id
 
+
+def validate_quantity(quantity: int) -> int:
+    """
+    Validate quantity value.
+    
+    Quantities should be:
+    - Non-negative integers
+    - Reasonable maximum (e.g., 1000000)
+    
+    Args:
+        quantity: Quantity value to validate
+        
+    Returns:
+        Validated quantity integer
+        
+    Raises:
+        ValueError: If quantity is invalid
+    """
+    if quantity < 0:
+        raise ValueError("Quantity cannot be negative")
+    
+    if quantity > 1000000:
+        raise ValueError("Quantity exceeds maximum allowed value (1000000)")
+    
+    return quantity
+
+
+def validate_price(price: float) -> float:
+    """
+    Validate price value.
+    
+    Prices should be:
+    - Non-negative
+    - Reasonable maximum (e.g., 1000000)
+    
+    Args:
+        price: Price value to validate
+        
+    Returns:
+        Validated price float
+        
+    Raises:
+        ValueError: If price is invalid
+    """
+    if price < 0:
+        raise ValueError("Price cannot be negative")
+    
+    if price > 1000000:
+        raise ValueError("Price exceeds maximum allowed value (1000000)")
+    
+    return price
+

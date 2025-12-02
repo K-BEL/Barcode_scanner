@@ -57,8 +57,9 @@ def create_tables():
         details TEXT,
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
         INDEX idx_cart_barcode (barcode),
-        INDEX idx_cart_timestamp (timestamp),
-        FOREIGN KEY (barcode) REFERENCES products(barcode) ON DELETE CASCADE
+        INDEX idx_cart_timestamp (timestamp)
+        -- Note: Foreign key constraint removed to preserve historical cart data
+        -- even if products are deleted. Product existence is validated in service layer.
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     """
     
@@ -80,7 +81,7 @@ def create_tables():
         cashier_name VARCHAR(255) NULL,
         total_amount FLOAT NOT NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        file_path VARCHAR(500) NULL,
+        file_path TEXT NULL,
         INDEX idx_bill_created_at (created_at),
         INDEX idx_bill_cashier (cashier_name)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -6,7 +6,7 @@ from app.schemas.cart import CartItemCreate, CartItemUpdate, CartItemResponse, C
 from app.services.cart_service import CartService
 from app.core.dependencies import get_cart_service
 from app.utils.datetime_utils import serialize_datetime
-from app.utils.validators import validate_barcode
+from app.utils.validators import validate_barcode, validate_quantity, validate_price
 
 router = APIRouter(prefix="/cart", tags=["cart"])
 
@@ -34,7 +34,21 @@ def add_product_cart(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     
-    cart_item = service.add_product(barcode, product.dict())
+    # Validate quantity and price
+    product_dict = product.dict()
+    if 'quantity' in product_dict and product_dict['quantity'] is not None:
+        try:
+            product_dict['quantity'] = validate_quantity(product_dict['quantity'])
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+    
+    if 'price' in product_dict and product_dict['price'] is not None:
+        try:
+            product_dict['price'] = validate_price(product_dict['price'])
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+    
+    cart_item = service.add_product(barcode, product_dict)
     
     return CartItemResponse(
         barcode=cart_item['barcode'],
@@ -69,10 +83,21 @@ def modify_product_cart(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     
-    cart_item = service.update_cart_item(
-        barcode,
-        {k: v for k, v in product.dict().items() if v is not None}
-    )
+    # Validate quantity and price
+    product_dict = {k: v for k, v in product.dict().items() if v is not None}
+    if 'quantity' in product_dict:
+        try:
+            product_dict['quantity'] = validate_quantity(product_dict['quantity'])
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+    
+    if 'price' in product_dict:
+        try:
+            product_dict['price'] = validate_price(product_dict['price'])
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+    
+    cart_item = service.update_cart_item(barcode, product_dict)
     
     return CartItemResponse(
         barcode=cart_item['barcode'],

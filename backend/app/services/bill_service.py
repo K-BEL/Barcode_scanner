@@ -1,5 +1,5 @@
 """Bill generation service using raw MySQL queries."""
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 from datetime import datetime
 from pathlib import Path
 from fastapi import HTTPException
@@ -100,12 +100,29 @@ class BillService:
                     datetime.utcnow()
                 )
                 cursor.execute(insert_query, values)
+                bill_id = cursor.lastrowid
+                
+                # Decrement inventory quantities for all cart items
+                for item in cart_items:
+                    # Check current inventory quantity
+                    cursor.execute("SELECT quantity FROM products WHERE barcode = %s FOR UPDATE", (item['barcode'],))
+                    product = cursor.fetchone()
+                    
+                    if product:
+                        new_quantity = max(0, product['quantity'] - item['quantity'])
+                        cursor.execute(
+                            "UPDATE products SET quantity = %s WHERE barcode = %s",
+                            (new_quantity, item['barcode'])
+                        )
+                        logger.info(f"Inventory updated: {item['barcode']} -> {new_quantity} (decremented {item['quantity']})")
+                    else:
+                        logger.warning(f"Product {item['barcode']} not found in inventory, skipping inventory update")
                 
                 cursor.execute("DELETE FROM cart")
                 cleared_items = cursor.rowcount
                 
                 conn.commit()
-                logger.info(f"Bill stored in database and cart cleared ({cleared_items} item(s))")
+                logger.info(f"Bill stored in database (ID: {bill_id}), inventory updated, and cart cleared ({cleared_items} item(s))")
             except (EmptyCartError, HTTPException):
                 # Re-raise application exceptions
                 conn.rollback()
@@ -137,6 +154,7 @@ class BillService:
         
         return {
             "message": "Bill ticket generated successfully",
+            "bill_id": bill_id,
             "cashier": cashier_name if cashier_name else "No cashier name provided",
             "file_path": str(bill_file_path),
             "pdf_path": str(pdf_path) if pdf_path else None,
@@ -215,3 +233,108 @@ class BillService:
         
         c.save()
         return pdf_file_path
+    
+    def get_bills(
+        self,
+        page: int = 1,
+        page_size: int = 100,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
+        cashier_name: Optional[str] = None,
+        min_amount: Optional[float] = None,
+        max_amount: Optional[float] = None
+    ) -> List[Dict]:
+        """
+        Get all bills with optional filtering and pagination.
+        
+        Args:
+            page: Page number (1-indexed)
+            page_size: Number of items per page
+            start_date: Start date filter (YYYY-MM-DD format)
+            end_date: End date filter (YYYY-MM-DD format)
+            cashier_name: Filter by cashier name
+            min_amount: Minimum total amount filter
+            max_amount: Maximum total amount filter
+            
+        Returns:
+            List of bill dictionaries
+        """
+        with get_db() as conn:
+            cursor = conn.cursor(dictionary=True)
+            
+            # Build WHERE clause
+            where_clauses = []
+            params = []
+            
+            if start_date:
+                where_clauses.append("DATE(created_at) >= %s")
+                params.append(start_date)
+            
+            if end_date:
+                where_clauses.append("DATE(created_at) <= %s")
+                params.append(end_date)
+            
+            if cashier_name:
+                where_clauses.append("cashier_name = %s")
+                params.append(cashier_name)
+            
+            if min_amount is not None:
+                where_clauses.append("total_amount >= %s")
+                params.append(min_amount)
+            
+            if max_amount is not None:
+                where_clauses.append("total_amount <= %s")
+                params.append(max_amount)
+            
+            # Build query
+            query_parts = ["SELECT id as bill_id, cashier_name, total_amount, created_at, file_path FROM bills"]
+            
+            if where_clauses:
+                query_parts.append("WHERE")
+                query_parts.append(" AND ".join(where_clauses))
+            
+            query_parts.append("ORDER BY created_at DESC")
+            
+            # Add pagination
+            offset = (page - 1) * page_size
+            query_parts.append("LIMIT %s OFFSET %s")
+            params.extend([page_size, offset])
+            
+            query = " ".join(query_parts)
+            cursor.execute(query, params)
+            bills = cursor.fetchall()
+            cursor.close()
+            
+            # Convert datetime to string
+            for bill in bills:
+                if bill['created_at'] and isinstance(bill['created_at'], datetime):
+                    bill['created_at'] = bill['created_at'].isoformat()
+            
+            return bills
+    
+    def get_bill(self, bill_id: int) -> Optional[Dict]:
+        """
+        Get a specific bill by ID.
+        
+        Args:
+            bill_id: Bill ID
+            
+        Returns:
+            Bill dictionary or None if not found
+        """
+        with get_db() as conn:
+            cursor = conn.cursor(dictionary=True)
+            cursor.execute(
+                "SELECT * FROM bills WHERE id = %s",
+                (bill_id,)
+            )
+            bill = cursor.fetchone()
+            cursor.close()
+            
+            if bill:
+                # Convert datetime to string
+                if bill['created_at'] and isinstance(bill['created_at'], datetime):
+                    bill['created_at'] = bill['created_at'].isoformat()
+                bill['bill_id'] = bill.pop('id')
+            
+            return bill

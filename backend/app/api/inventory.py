@@ -6,7 +6,7 @@ from app.schemas.product import ProductCreate, ProductUpdate, ProductResponse
 from app.services.inventory_service import InventoryService
 from app.core.dependencies import get_inventory_service
 from app.utils.datetime_utils import serialize_datetime
-from app.utils.validators import validate_barcode
+from app.utils.validators import validate_barcode, validate_quantity, validate_price
 
 router = APIRouter(prefix="/inventory", tags=["inventory"])
 
@@ -34,7 +34,21 @@ def add_product(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     
-    created_product = service.add_product(barcode, product.dict())
+    # Validate quantity and price
+    product_dict = product.dict()
+    if 'quantity' in product_dict and product_dict['quantity'] is not None:
+        try:
+            product_dict['quantity'] = validate_quantity(product_dict['quantity'])
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+    
+    if 'price' in product_dict and product_dict['price'] is not None:
+        try:
+            product_dict['price'] = validate_price(product_dict['price'])
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+    
+    created_product = service.add_product(barcode, product_dict)
     
     return ProductResponse(
         barcode=created_product['barcode'],
@@ -69,10 +83,21 @@ def modify_product(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     
-    updated_product = service.update_product(
-        barcode,
-        {k: v for k, v in product.dict().items() if v is not None}
-    )
+    # Validate quantity and price
+    product_dict = {k: v for k, v in product.dict().items() if v is not None}
+    if 'quantity' in product_dict:
+        try:
+            product_dict['quantity'] = validate_quantity(product_dict['quantity'])
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+    
+    if 'price' in product_dict:
+        try:
+            product_dict['price'] = validate_price(product_dict['price'])
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+    
+    updated_product = service.update_product(barcode, product_dict)
     
     return ProductResponse(
         barcode=updated_product['barcode'],
