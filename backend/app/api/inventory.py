@@ -50,12 +50,17 @@ def add_product(
     
     created_product = service.add_product(barcode, product_dict)
     
+    reorder_point = created_product.get('reorder_point', 0)
+    quantity = created_product.get('quantity', 0)
     return ProductResponse(
         barcode=created_product['barcode'],
         product_name=created_product['product_name'],
         price=created_product['price'],
         quantity=created_product['quantity'],
         details=created_product['details'],
+        reorder_point=reorder_point,
+        category_id=created_product.get('category_id'),
+        is_low_stock=reorder_point > 0 and quantity <= reorder_point,
         timestamp=serialize_datetime(created_product['timestamp'])
     )
 
@@ -99,12 +104,17 @@ def modify_product(
     
     updated_product = service.update_product(barcode, product_dict)
     
+    reorder_point = updated_product.get('reorder_point', 0)
+    quantity = updated_product.get('quantity', 0)
     return ProductResponse(
         barcode=updated_product['barcode'],
         product_name=updated_product['product_name'],
         price=updated_product['price'],
         quantity=updated_product['quantity'],
         details=updated_product['details'],
+        reorder_point=reorder_point,
+        category_id=updated_product.get('category_id'),
+        is_low_stock=reorder_point > 0 and quantity <= reorder_point,
         timestamp=serialize_datetime(updated_product['timestamp'])
     )
 
@@ -146,6 +156,8 @@ def get_list_inventory(
     search: Optional[str] = Query(None, description="Search by product name"),
     min_price: Optional[float] = Query(None, ge=0, description="Minimum price filter"),
     max_price: Optional[float] = Query(None, ge=0, description="Maximum price filter"),
+    category_id: Optional[int] = Query(None, description="Filter by category ID"),
+    low_stock_only: Optional[bool] = Query(None, description="Only return low stock items"),
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(100, ge=1, le=1000, description="Items per page"),
     service: InventoryService = Depends(get_inventory_service)
@@ -168,6 +180,8 @@ def get_list_inventory(
         search=search,
         min_price=min_price,
         max_price=max_price,
+        category_id=category_id,
+        low_stock_only=low_stock_only,
         page=page,
         page_size=page_size
     )
@@ -180,10 +194,67 @@ def get_list_inventory(
             price=product['price'],
             quantity=product['quantity'],
             details=product['details'],
+            reorder_point=product.get('reorder_point', 0),
+            category_id=product.get('category_id'),
+            is_low_stock=product.get('is_low_stock', False),
             timestamp=serialize_datetime(product['timestamp'])
         )
     
     return result
+
+
+@router.get("/products/low-stock", response_model=Dict[str, ProductResponse])
+def get_low_stock_products(
+    service: InventoryService = Depends(get_inventory_service)
+):
+    """
+    Get all products with low stock (quantity <= reorder_point).
+    
+    Returns:
+        Dictionary of low stock products
+    """
+    products = service.get_low_stock_products()
+    
+    result = {}
+    for product in products:
+        result[product['barcode']] = ProductResponse(
+            barcode=product['barcode'],
+            product_name=product['product_name'],
+            price=product['price'],
+            quantity=product['quantity'],
+            details=product['details'],
+            reorder_point=product.get('reorder_point', 0),
+            category_id=product.get('category_id'),
+            is_low_stock=True,
+            timestamp=serialize_datetime(product['timestamp'])
+        )
+    
+    return result
+
+
+@router.get("/products/{barcode}/stock-history")
+def get_stock_history(
+    barcode: str,
+    limit: int = Query(50, ge=1, le=500, description="Maximum number of records"),
+    service: InventoryService = Depends(get_inventory_service)
+):
+    """
+    Get stock history for a product.
+    
+    Args:
+        barcode: Product barcode
+        limit: Maximum number of records to return
+        
+    Returns:
+        List of stock history records
+    """
+    try:
+        barcode = validate_barcode(barcode)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
+    history = service.get_stock_history(barcode, limit)
+    return {"barcode": barcode, "history": history}
 
 
 # Legacy endpoint for backward compatibility

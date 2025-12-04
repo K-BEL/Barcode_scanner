@@ -42,8 +42,22 @@ def create_tables():
         quantity INT DEFAULT 1,
         details TEXT,
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+        reorder_point INT DEFAULT 0,
+        category_id INT NULL,
         INDEX idx_product_name (product_name),
-        INDEX idx_timestamp (timestamp)
+        INDEX idx_timestamp (timestamp),
+        INDEX idx_reorder_point (reorder_point),
+        INDEX idx_category_id (category_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    """
+    
+    create_categories_table = """
+    CREATE TABLE IF NOT EXISTS categories (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255) NOT NULL UNIQUE,
+        description TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_category_name (name)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     """
     
@@ -80,10 +94,58 @@ def create_tables():
         bill_text TEXT NOT NULL,
         cashier_name VARCHAR(255) NULL,
         total_amount FLOAT NOT NULL,
+        subtotal FLOAT NOT NULL,
+        discount_amount FLOAT DEFAULT 0,
+        tax_amount FLOAT DEFAULT 0,
+        payment_method VARCHAR(50) DEFAULT 'cash',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         file_path TEXT NULL,
         INDEX idx_bill_created_at (created_at),
-        INDEX idx_bill_cashier (cashier_name)
+        INDEX idx_bill_cashier (cashier_name),
+        INDEX idx_bill_payment_method (payment_method)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    """
+    
+    create_stock_history_table = """
+    CREATE TABLE IF NOT EXISTS stock_history (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        barcode VARCHAR(255) NOT NULL,
+        quantity_change INT NOT NULL,
+        previous_quantity INT NOT NULL,
+        new_quantity INT NOT NULL,
+        reason VARCHAR(255) NOT NULL,
+        user_id VARCHAR(36) NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_stock_barcode (barcode),
+        INDEX idx_stock_created_at (created_at),
+        INDEX idx_stock_user (user_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    """
+    
+    create_user_roles_table = """
+    CREATE TABLE IF NOT EXISTS user_roles (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id VARCHAR(36) NOT NULL,
+        role VARCHAR(50) NOT NULL DEFAULT 'cashier',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_user_role_user (user_id),
+        INDEX idx_user_role_role (role),
+        UNIQUE KEY unique_user_role (user_id, role)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    """
+    
+    create_user_auth_table = """
+    CREATE TABLE IF NOT EXISTS user_auth (
+        user_id VARCHAR(36) PRIMARY KEY,
+        username VARCHAR(255) NOT NULL UNIQUE,
+        password_hash VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NULL,
+        is_active BOOLEAN DEFAULT TRUE,
+        last_login DATETIME NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_auth_username (username),
+        INDEX idx_auth_email (email)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     """
     
@@ -93,9 +155,58 @@ def create_tables():
             
             # Create tables
             cursor.execute(create_products_table)
+            cursor.execute(create_categories_table)
             cursor.execute(create_cart_table)
             cursor.execute(create_users_table)
+            cursor.execute(create_user_auth_table)
+            cursor.execute(create_user_roles_table)
             cursor.execute(create_bills_table)
+            cursor.execute(create_stock_history_table)
+            
+            # Add foreign key constraints if they don't exist
+            try:
+                cursor.execute("""
+                    ALTER TABLE products 
+                    ADD CONSTRAINT fk_product_category 
+                    FOREIGN KEY (category_id) REFERENCES categories(id) 
+                    ON DELETE SET NULL
+                """)
+            except mysql.connector.Error:
+                # Foreign key might already exist, ignore
+                pass
+            
+            try:
+                cursor.execute("""
+                    ALTER TABLE stock_history 
+                    ADD CONSTRAINT fk_stock_product 
+                    FOREIGN KEY (barcode) REFERENCES products(barcode) 
+                    ON DELETE CASCADE
+                """)
+            except mysql.connector.Error:
+                # Foreign key might already exist, ignore
+                pass
+            
+            try:
+                cursor.execute("""
+                    ALTER TABLE user_roles 
+                    ADD CONSTRAINT fk_role_user 
+                    FOREIGN KEY (user_id) REFERENCES users(id) 
+                    ON DELETE CASCADE
+                """)
+            except mysql.connector.Error:
+                # Foreign key might already exist, ignore
+                pass
+            
+            try:
+                cursor.execute("""
+                    ALTER TABLE user_auth 
+                    ADD CONSTRAINT fk_auth_user 
+                    FOREIGN KEY (user_id) REFERENCES users(id) 
+                    ON DELETE CASCADE
+                """)
+            except mysql.connector.Error:
+                # Foreign key might already exist, ignore
+                pass
             
             conn.commit()
             cursor.close()
@@ -112,3 +223,10 @@ def init_db():
     
     # Create all tables
     create_tables()
+    
+    # Run migrations for existing databases
+    try:
+        from app.core.migrations import migrate_database
+        migrate_database()
+    except Exception as e:
+        logger.warning(f"Migration warning (OK if first run): {e}")

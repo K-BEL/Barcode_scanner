@@ -4,6 +4,7 @@ from app.services.cart_service import CartService
 from app.services.user_service import UserService
 from app.services.bill_service import BillService
 from app.services.barcode_service import BarcodeService
+from app.services.category_service import CategoryService
 
 
 def get_inventory_service() -> InventoryService:
@@ -29,4 +30,21 @@ def get_bill_service() -> BillService:
 def get_barcode_service() -> BarcodeService:
     """Get barcode service instance."""
     return BarcodeService()
+
+
+def get_category_service() -> CategoryService:
+    """Get category service instance."""
+    return CategoryService()
+
+
+def get_auth_service():
+    """Get auth service instance."""
+    from app.services.auth_service import AuthService
+    return AuthService()
+
+
+def get_report_service():
+    """Get report service instance."""
+    from app.services.report_service import ReportService
+    return ReportService()
 

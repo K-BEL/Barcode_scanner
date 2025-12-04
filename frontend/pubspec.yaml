@@ -26,6 +26,9 @@ dependencies:
   
   # Utilities
   shared_preferences: ^2.2.2
+  
+  # UI Enhancements
+  flutter_haptic_feedback: ^0.7.0
 
 dev_dependencies:
   flutter_test:

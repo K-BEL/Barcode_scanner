@@ -6,7 +6,7 @@ from app.core.config import settings
 from app.core.database import init_db
 from app.core.logging import logger
 from app.core.middleware import ExceptionHandlerMiddleware
-from app.api import scanner, inventory, cart, users, bills
+from app.api import scanner, inventory, cart, users, bills, categories, auth, reports
 
 # API versioning
 API_V1_PREFIX = "/api/v1"
@@ -49,9 +49,12 @@ app.add_middleware(CORSMiddleware, **cors_kwargs)
 # Include routers with API versioning
 app.include_router(scanner.router, prefix=API_V1_PREFIX)
 app.include_router(inventory.router, prefix=API_V1_PREFIX)
+app.include_router(categories.router, prefix=API_V1_PREFIX)
 app.include_router(cart.router, prefix=API_V1_PREFIX)
 app.include_router(users.router, prefix=API_V1_PREFIX)
 app.include_router(bills.router, prefix=API_V1_PREFIX)
+app.include_router(auth.router, prefix=API_V1_PREFIX)
+app.include_router(reports.router, prefix=API_V1_PREFIX)
 
 # Legacy endpoints (without versioning) for backward compatibility
 # These will be removed in version 2.0.0 - migrate to /api/v1/* endpoints

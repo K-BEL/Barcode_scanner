@@ -22,7 +22,14 @@ except ImportError:
 class BillService:
     """Service for bill generation operations."""
     
-    def generate_bill(self, cashier_name: Optional[str] = None) -> Dict:
+    def generate_bill(
+        self, 
+        cashier_name: Optional[str] = None,
+        discount_percent: Optional[float] = None,
+        discount_amount: Optional[float] = None,
+        tax_percent: Optional[float] = None,
+        payment_method: str = "cash"
+    ) -> Dict:
         """
         Generate a bill from cart items.
         
@@ -66,8 +73,33 @@ class BillService:
                     bill_lines.append("-------------------------")
                     total_price += item_total
                 
-                total_price = round(total_price, 2)
-                bill_lines.append(f"Total: {total_price} USD")
+                subtotal = round(total_price, 2)
+                bill_lines.append(f"Subtotal: {subtotal} USD")
+                
+                # Calculate discount
+                discount = 0.0
+                if discount_percent is not None:
+                    discount = round(subtotal * (discount_percent / 100), 2)
+                elif discount_amount is not None:
+                    discount = round(min(discount_amount, subtotal), 2)
+                
+                if discount > 0:
+                    bill_lines.append(f"Discount: -{discount} USD")
+                    bill_lines.append("-------------------------")
+                
+                # Calculate tax on discounted amount
+                after_discount = subtotal - discount
+                tax = 0.0
+                if tax_percent is not None:
+                    tax = round(after_discount * (tax_percent / 100), 2)
+                
+                if tax > 0:
+                    bill_lines.append(f"Tax ({tax_percent}%): {tax} USD")
+                    bill_lines.append("-------------------------")
+                
+                total_amount = round(after_discount + tax, 2)
+                bill_lines.append(f"Total: {total_amount} USD")
+                bill_lines.append(f"Payment Method: {payment_method.upper()}")
                 bill_lines.append("-------------------------")
                 
                 bill_text = "\n".join(bill_lines)
@@ -89,13 +121,17 @@ class BillService:
                 
                 # Save bill to database and clear the cart in the same transaction
                 insert_query = """
-                    INSERT INTO bills (bill_text, cashier_name, total_amount, file_path, created_at)
-                    VALUES (%s, %s, %s, %s, %s)
+                    INSERT INTO bills (bill_text, cashier_name, total_amount, subtotal, discount_amount, tax_amount, payment_method, file_path, created_at)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """
                 values = (
                     bill_text,
                     cashier_name,
-                    total_price,
+                    total_amount,
+                    subtotal,
+                    discount,
+                    tax,
+                    payment_method,
                     str(bill_file_path),
                     datetime.utcnow()
                 )
@@ -144,7 +180,11 @@ class BillService:
             try:
                 pdf_path = self._generate_pdf_bill(
                     cart_items,
-                    total_price,
+                    subtotal,
+                    discount,
+                    tax,
+                    total_amount,
+                    payment_method,
                     cashier_name,
                     timestamp
                 )
@@ -158,13 +198,21 @@ class BillService:
             "cashier": cashier_name if cashier_name else "No cashier name provided",
             "file_path": str(bill_file_path),
             "pdf_path": str(pdf_path) if pdf_path else None,
-            "total_amount": total_price
+            "subtotal": subtotal,
+            "discount_amount": discount,
+            "tax_amount": tax,
+            "total_amount": total_amount,
+            "payment_method": payment_method
         }
     
     def _generate_pdf_bill(
         self,
         cart_items: list,
-        total_price: float,
+        subtotal: float,
+        discount: float,
+        tax: float,
+        total_amount: float,
+        payment_method: str,
         cashier_name: Optional[str],
         timestamp: str
     ) -> Path:
@@ -173,7 +221,11 @@ class BillService:
         
         Args:
             cart_items: List of cart items
-            total_price: Total bill amount
+            subtotal: Subtotal amount
+            discount: Discount amount
+            tax: Tax amount
+            total_amount: Total bill amount
+            payment_method: Payment method used
             cashier_name: Optional cashier name
             timestamp: Timestamp string for filename
             
@@ -224,12 +276,30 @@ class BillService:
             c.drawString(1.2 * inch, y_position, f"Qty: {item['quantity']} x ${item['price']:.2f} = ${item_total:.2f}")
             y_position -= 0.3 * inch
         
-        # Total
+        # Subtotal, discount, tax, total
         y_position -= 0.2 * inch
         c.line(1 * inch, y_position, width - 1 * inch, y_position)
         y_position -= 0.3 * inch
+        c.setFont("Helvetica", 10)
+        c.drawString(1 * inch, y_position, f"Subtotal: ${subtotal:.2f}")
+        y_position -= 0.25 * inch
+        
+        if discount > 0:
+            c.drawString(1 * inch, y_position, f"Discount: -${discount:.2f}")
+            y_position -= 0.25 * inch
+        
+        if tax > 0:
+            c.drawString(1 * inch, y_position, f"Tax: ${tax:.2f}")
+            y_position -= 0.25 * inch
+        
+        y_position -= 0.1 * inch
+        c.line(1 * inch, y_position, width - 1 * inch, y_position)
+        y_position -= 0.3 * inch
         c.setFont("Helvetica-Bold", 14)
-        c.drawString(1 * inch, y_position, f"Total: ${total_price:.2f}")
+        c.drawString(1 * inch, y_position, f"Total: ${total_amount:.2f}")
+        y_position -= 0.3 * inch
+        c.setFont("Helvetica", 10)
+        c.drawString(1 * inch, y_position, f"Payment: {payment_method.upper()}")
         
         c.save()
         return pdf_file_path
@@ -287,7 +357,7 @@ class BillService:
                 params.append(max_amount)
             
             # Build query
-            query_parts = ["SELECT id as bill_id, cashier_name, total_amount, created_at, file_path FROM bills"]
+            query_parts = ["SELECT id as bill_id, cashier_name, subtotal, discount_amount, tax_amount, total_amount, payment_method, created_at, file_path FROM bills"]
             
             if where_clauses:
                 query_parts.append("WHERE")

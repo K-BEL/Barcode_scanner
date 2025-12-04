@@ -2,7 +2,7 @@
 from typing import Optional, Dict, List
 from fastapi import APIRouter, Query, Depends, HTTPException
 
-from app.schemas.bill import BillResponse, BillListItem, BillDetailResponse
+from app.schemas.bill import BillResponse, BillListItem, BillDetailResponse, BillGenerateRequest
 from app.services.bill_service import BillService
 from app.core.dependencies import get_bill_service
 from app.utils.datetime_utils import serialize_datetime_optional
@@ -10,22 +10,28 @@ from app.utils.datetime_utils import serialize_datetime_optional
 router = APIRouter(prefix="/bills", tags=["bills"])
 
 
-@router.get("/generate", response_model=BillResponse)
+@router.post("/generate", response_model=BillResponse)
 def generate_bill(
-    cashier_name: Optional[str] = Query(None, description="Cashier name"),
+    request: BillGenerateRequest,
     service: BillService = Depends(get_bill_service)
 ):
     """
     Generate a bill from cart items.
     
     Args:
-        cashier_name: Optional cashier name
+        request: Bill generation request with payment method, discounts, taxes
         service: Bill service dependency
         
     Returns:
         Bill information including file path
     """
-    result = service.generate_bill(cashier_name)
+    result = service.generate_bill(
+        cashier_name=request.cashier_name,
+        discount_percent=request.discount_percent,
+        discount_amount=request.discount_amount,
+        tax_percent=request.tax_percent,
+        payment_method=request.payment_method
+    )
     
     return BillResponse(
         message=result["message"],
@@ -33,7 +39,56 @@ def generate_bill(
         cashier=result.get("cashier"),
         file_path=result["file_path"],
         pdf_path=result.get("pdf_path"),
-        total_amount=result["total_amount"]
+        subtotal=result["subtotal"],
+        discount_amount=result["discount_amount"],
+        tax_amount=result["tax_amount"],
+        total_amount=result["total_amount"],
+        payment_method=result["payment_method"]
+    )
+
+
+@router.get("/generate", response_model=BillResponse)
+def generate_bill_get(
+    cashier_name: Optional[str] = Query(None, description="Cashier name"),
+    discount_percent: Optional[float] = Query(None, ge=0, le=100, description="Discount percentage"),
+    discount_amount: Optional[float] = Query(None, ge=0, description="Fixed discount amount"),
+    tax_percent: Optional[float] = Query(None, ge=0, le=100, description="Tax percentage"),
+    payment_method: str = Query("cash", description="Payment method"),
+    service: BillService = Depends(get_bill_service)
+):
+    """
+    Generate a bill from cart items (GET method for backward compatibility).
+    
+    Args:
+        cashier_name: Optional cashier name
+        discount_percent: Optional discount percentage (0-100)
+        discount_amount: Optional fixed discount amount
+        tax_percent: Optional tax percentage (0-100)
+        payment_method: Payment method (default: cash)
+        service: Bill service dependency
+        
+    Returns:
+        Bill information including file path
+    """
+    result = service.generate_bill(
+        cashier_name=cashier_name,
+        discount_percent=discount_percent,
+        discount_amount=discount_amount,
+        tax_percent=tax_percent,
+        payment_method=payment_method
+    )
+    
+    return BillResponse(
+        message=result["message"],
+        bill_id=result.get("bill_id"),
+        cashier=result.get("cashier"),
+        file_path=result["file_path"],
+        pdf_path=result.get("pdf_path"),
+        subtotal=result["subtotal"],
+        discount_amount=result["discount_amount"],
+        tax_amount=result["tax_amount"],
+        total_amount=result["total_amount"],
+        payment_method=result["payment_method"]
     )
 
 
@@ -79,7 +134,11 @@ def get_bills(
         result[str(bill['bill_id'])] = BillListItem(
             bill_id=bill['bill_id'],
             cashier=bill.get('cashier_name'),
+            subtotal=bill.get('subtotal', bill['total_amount']),
+            discount_amount=bill.get('discount_amount', 0),
+            tax_amount=bill.get('tax_amount', 0),
             total_amount=bill['total_amount'],
+            payment_method=bill.get('payment_method', 'cash'),
             created_at=bill['created_at'],
             file_path=bill.get('file_path')
         )
@@ -111,7 +170,11 @@ def get_bill(
         bill_id=bill['bill_id'],
         bill_text=bill['bill_text'],
         cashier=bill.get('cashier_name'),
+        subtotal=bill.get('subtotal', bill['total_amount']),
+        discount_amount=bill.get('discount_amount', 0),
+        tax_amount=bill.get('tax_amount', 0),
         total_amount=bill['total_amount'],
+        payment_method=bill.get('payment_method', 'cash'),
         created_at=bill['created_at'],
         file_path=bill.get('file_path')
     )
